@@ -71,9 +71,6 @@ def forward_checking(csp, var, value, assignment, excluded):
                     csp.available_domains[var_bind].remove(val_bind)
                     if excluded is not None:
                         excluded.append((var_bind, val_bind))
-            if not csp.available_domains[var_bind]:
-                return False
-    return True
 
 
 # kolejnosc zmiennej
