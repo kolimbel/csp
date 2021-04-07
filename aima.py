@@ -319,7 +319,7 @@ def recursive_backtracking(assignment, csp):
         return assignment
     var = select_unassigned_variable(assignment, csp)
     for val in order_domain_values(var, assignment, csp):
-        if csp.fc or csp.nconflicts(var, val, assignment) == 0:
+        if csp.fc or csp.number_of_conflicts(var, val, assignment) == 0:
             csp.assign(var, val, assignment)
             result = recursive_backtracking(assignment, csp)
             if result is not None:
@@ -346,7 +346,7 @@ def order_domain_values(var, assignment, csp):
         domain = csp.domains[var][:]
     if csp.lcv:
         # If LCV is specified, consider values with fewer conflicts first
-        key = lambda val: csp.nconflicts(var, val, assignment)
+        key = lambda val: csp.number_of_conflicts(var, val, assignment)
         domain.sort(lambda x_y: cmp(key(x_y[0]), key(x_y[1])))
     while domain:
         yield domain.pop()
@@ -355,7 +355,7 @@ def num_legal_values(csp, var, assignment):
     if csp.curr_domains:
         return len(csp.curr_domains[var])
     else:
-        return count_if(lambda val: csp.nconflicts(var, val, assignment) == 0,
+        return count_if(lambda val: csp.number_of_conflicts(var, val, assignment) == 0,
                         csp.domains[var])
 
 
