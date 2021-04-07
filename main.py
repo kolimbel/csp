@@ -22,10 +22,12 @@ from map_coloring import *
 # random_graph = Graph(10, 10, 6)
 # print(random_graph.strgraph)
 
-mc = MapColoring(30, 30, 10)
-mc.map_backtracking(k=3)
-mc.show_map()
+# mc = MapColoring(30, 30, 8)
+# mc.map_backtracking(k=4)
+# mc.show_map()
+#
+# ep = EinsteinsPuzzle()
+# ep.show_graph()
 
-ep = EinsteinsPuzzle()
-ep.show_graph()
+#plt.close('all')
 

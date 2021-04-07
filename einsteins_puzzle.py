@@ -530,3 +530,6 @@ class EinsteinsPuzzle:
         nx.draw_networkx_edges(G, pos, edgelist=black_edges, arrows=True)
 
         plt.show(block=True)
+
+ep = EinsteinsPuzzle()
+ep.show_graph()

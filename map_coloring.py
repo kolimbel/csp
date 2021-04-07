@@ -9,13 +9,11 @@ class MapColoring:
         self.bindings = self.graph.strgraph
 
     def map_coloring(self, k):
-        """Make a CSP for the problem of coloring a map with different colors
-        for any two adjacent regions. Arguments are a list of colors, and a
-        dict of {region: [neighbor,...]} entries. This dict may also be
-        specified as a string of the form defined by parse_neighbors."""
         if k == 3:
+            print('3 kolory')
             colors = ['tomato', 'limegreen', 'lightskyblue']
         elif k == 4:
+            print('4 kolory')
             colors = ['tomato', 'limegreen', 'lightskyblue', 'yellow']
         else:
             raise Exception('parametr k moze przyjac wartosc tylko 3 albo 4')
@@ -33,38 +31,24 @@ class MapColoring:
             return fst_color != snd_color
 
     def bindings_to_dic(self):
-        """Convert a string of the form 'X: Y Z; Y: Z' into a dict mapping
-        regions to neighbors. The syntax is a region name followed by a ':'
-        followed by zero or more region names, followed by ';', repeated for
-        each region name. If you say 'X: Y' you don't need 'Y: X'.
-        >>> bindings_to_dic('X: Y Z; Y: Z') == {'Y': ['X', 'Z'], 'X': ['Y', 'Z'], 'Z': ['X', 'Y']}
-        True
-        """
         dictionary = {}
         splitted = []
         for sp in self.bindings.split(';'):
             s = sp.split(':')
             splitted.append(s)
-        for (BinMain, BinBindings) in splitted:
-            BinMain = BinMain.strip()
-            for Bin in BinBindings.split():
+        for (node, neighs) in splitted:
+            node = node.strip()
+            for Bin in neighs.split():
                 try:
-                    dictionary[BinMain].append(Bin)
+                    dictionary[node].append(Bin)
                 except:
-                    dictionary[BinMain] = []
-                    dictionary[BinMain].append(Bin)
-                try:
-                    dictionary[Bin].append(BinMain)
-                except:
-                    dictionary[Bin] = []
-                    dictionary[Bin].append(BinMain)
+                    dictionary[node] = []
+                    dictionary[node].append(Bin)
         return dictionary
 
-    def map_backtracking(self, k=3):
+    def map_backtracking(self, k, fc=False, mrv=False):
         map_graph_csp = self.map_coloring(k)
-        # print(map_graph_csp)
-        self.map_graph_bt = backtracking_search(map_graph_csp, fc=True)
-        # print(map_graph_bt)
+        self.map_graph_bt = backtracking_search(map_graph_csp, fc=fc, mrv=mrv)
 
         if self.map_graph_bt is None:
             raise Exception(
@@ -111,3 +95,8 @@ class StaticDictionary:
 
     def __getitem__(self, key):
         return self.value
+
+
+mc = MapColoring(30, 30, 12)
+mc.map_backtracking(k=4, fc=True)
+mc.show_map()
