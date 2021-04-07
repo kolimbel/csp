@@ -26,59 +26,10 @@
 #
 #     def get_solutions(self):
 #         return self.solutions
-from collections import defaultdict
+
 
 from random_graph import *
 
-
-# class Problem:
-#     """The abstract class for a formal problem. You should subclass
-#     this and implement the methods actions and result, and possibly
-#     __init__, goal_test, and path_cost. Then you will create instances
-#     of your subclass and solve them with the various search functions."""
-#
-#     def __init__(self, initial, goal=None):
-#         """The constructor specifies the initial state, and possibly a goal
-#         state, if there is a unique goal. Your subclass's constructor can add
-#         other arguments."""
-#         self.initial = initial
-#         self.goal = goal
-#
-#     def actions(self, state):
-#         """Return the actions that can be executed in the given
-#         state. The result would typically be a list, but if there are
-#         many actions, consider yielding them one at a time in an
-#         iterator, rather than building them all at once."""
-#         raise NotImplementedError
-#
-#     def result(self, state, action):
-#         """Return the state that results from executing the given
-#         action in the given state. The action must be one of
-#         self.actions(state)."""
-#         raise NotImplementedError
-#
-#     def goal_test(self, state):
-#         """Return True if the state is a goal. The default method compares the
-#         state to self.goal or checks for state in self.goal if it is a
-#         list, as specified in the constructor. Override this method if
-#         checking against a single self.goal is not enough."""
-#         if isinstance(self.goal, list):
-#             return is_in(state, self.goal)
-#         else:
-#             return state == self.goal
-#
-#     def path_cost(self, c, state1, action, state2):
-#         """Return the cost of a solution path that arrives at state2 from
-#         state1 via action, assuming cost c to get up to state1. If the problem
-#         is such that the path doesn't matter, this function will only look at
-#         state2. If the path does matter, it will consider c and maybe state1
-#         and action. The default method costs 1 for every step in the path."""
-#         return c + 1
-#
-#     def value(self, state):
-#         """For optimization problems, each state has a value. Hill Climbing
-#         and related algorithms try to maximize this value."""
-#         raise NotImplementedError
 
 class CSP():
     """This class describes finite-domain Constraint Satisfaction Problems.
@@ -116,7 +67,6 @@ class CSP():
         """
 
     def __init__(self, variables, domains, bindings, constraints):
-        #super().__init__(())
         self.variables = variables
         self.domains = domains
         self.bindings = bindings
@@ -125,12 +75,16 @@ class CSP():
         self.nassigns = 0
 
 
-
     def number_of_conflicts(self, var, val, assignment):
-        return count(v in assignment and not self.constraints(var, val, v, assignment[v]) for v in self.bindings[var])
+        counter_conflicts = 0
 
-        # These are for constraint propagation
+        for v in self.bindings[var]:
+            if v in assignment:
+                v_val = assignment[v]
+                if self.constraints(var, val, v, v_val) is False:
+                    counter_conflicts += 1
 
+        return counter_conflicts
 
 
 # kolejnosc zmiennej
@@ -138,7 +92,9 @@ class CSP():
 def select_unassigned_variable(assignment, csp):
     "Select the variable to work on next.  Find"
     for v in csp.variables:
-        if v not in assignment:
+        if v in assignment:
+            pass
+        else:
             return v
 
 def mrv(assignment, csp):
@@ -165,20 +121,27 @@ def count(seq):
 
 # kolejnosc wartosci z dziedzin
 
-def order_domain_values(var, assignment, csp):
-    "Decide what order to consider the domain variables."
-    if csp.available_domains:
-        domain = csp.available_domains[var]
-    else:
-        domain = csp.domains[var][:]
-    while domain:
-        yield domain.pop()
+def order_domain_values(var, csp):
+    try:
+        temp_domain = csp.available_domains[var]
+    except:
+        temp_domain = csp.domains[var][:]
+    while len(temp_domain) > 0:
+        val = temp_domain[len(temp_domain)-1]
+        temp_domain.remove(val)
+        yield val
 
-def recursive_backtracking(assignment, csp, fc):
+def recursive_backtracking(assignment, csp, fc, fst_domain):
     if len(assignment) == len(csp.variables):
         return assignment
     var = select_unassigned_variable(assignment, csp)
-    for val in order_domain_values(var, assignment, csp):
+
+    if fst_domain:
+        pass
+    else:
+        raise Exception('brak innej heurystyki dla wyboru wartosci z domeny')
+
+    for val in order_domain_values(var, csp):
         if csp.number_of_conflicts(var, val, assignment) == 0:
 
             # assign
@@ -198,11 +161,11 @@ def recursive_backtracking(assignment, csp, fc):
                 csp.available_domains[var] = [val]
 
                 forward_checking(csp, var, val, assignment, excluded)
-                result = recursive_backtracking(assignment, csp, fc)
+                result = recursive_backtracking(assignment, csp, fc, fst_domain)
                 if result is not None:
                     return result
             else:
-                result = recursive_backtracking(assignment, csp, fc)
+                result = recursive_backtracking(assignment, csp, fc, fst_domain)
                 if result is not None:
                     return result
 
@@ -227,8 +190,8 @@ def recursive_backtracking(assignment, csp, fc):
 #     return None
 
 
-def backtracking_search(csp, fc=False):
-    return recursive_backtracking({}, csp, fc)
+def backtracking_search(csp, fc=False, fst_domain=True):
+    return recursive_backtracking({}, csp, fc, fst_domain)
 
 
 def forward_checking(csp, var, value, assignment, excluded):
@@ -243,7 +206,6 @@ def forward_checking(csp, var, value, assignment, excluded):
         if B not in assignment:
             for b in csp.available_domains[B][:]:
                 if not csp.constraints(var, value, B, b):
-                    # csp.prune(B, b, excluded)
                     """Rule out var=value."""
                     csp.available_domains[B].remove(b)
                     if excluded is not None:
@@ -267,7 +229,6 @@ class UniversalDict:
 
     def __init__(self, value):
         self.value = value
-        costam = 5
 
     def __getitem__(self, key): return self.value
 
@@ -298,13 +259,23 @@ def parse_borders(neighbors):
     >>> parse_borders('X: Y Z; Y: Z') == {'Y': ['X', 'Z'], 'X': ['Y', 'Z'], 'Z': ['X', 'Y']}
     True
     """
-    dic = defaultdict(list)
+    #dic = defaultdict(list)
+    dic = {}
     specs = [spec.split(':') for spec in neighbors.split(';')]
     for (A, Aneighbors) in specs:
         A = A.strip()
         for B in Aneighbors.split():
-            dic[A].append(B)
-            dic[B].append(A)
+            try:
+                dic[A].append(B)
+            except:
+                dic[A] = []
+                dic[A].append(B)
+
+            try:
+                dic[B].append(A)
+            except:
+                dic[B] = []
+                dic[B].append(A)
     return dic
 
 # MAP ZADANIE
@@ -368,14 +339,14 @@ plt.show(block=False)
 
 # KONIEC MAP ZADANIE
 
-def Zebra():
-    """Return an instance of the Zebra Puzzle."""
-    Colors = 'bialy czerwony niebieski zielony zolty'.split()
-    Pets = 'konie koty psy ptaki rybki'.split()
-    Drinks = 'herbata kawa mleko piwo woda'.split()
-    Countries = 'anglik dunczyk niemiec norweg szwed'.split()
-    Smokes = 'cygara fajka bfiltra light mentolowe'.split()
-    variables = Colors + Pets + Drinks + Countries + Smokes
+def einsteins_puzzle():
+    nationality = ['anglik', 'dunczyk', 'niemiec', 'norweg', 'szwed']
+    color = ['bialy', 'czerwony', 'niebieski', 'zielony', 'zolty']
+    drink = ['herbata', 'kawa', 'mleko', 'piwo', 'woda']
+    tobacco = ['cygara', 'fajka', 'bfiltra', 'light', 'mentolowe']
+    animal = ['konie', 'koty', 'psy', 'ptaki', 'rybki']
+    #variables = [*color, *animal, *drink, *nationality, *tobacco]
+    variables = [*nationality, *color, *drink, *tobacco, *animal]
     domains = {}
     for var in variables:
         domains[var] = list(range(1, 6))
@@ -384,68 +355,33 @@ def Zebra():
     bindings = parse_borders("""anglik: czerwony; zielony: bialy; light: koty; light: woda; norweg: niebieski; konie: zolty;
                 niemiec: fajka; bfiltra: ptaki; szwed: psy; zolty: cygara;
                 dunczyk: herbata; mentolowe: piwo; zielony: kawa""")
-    for type in [Colors, Pets, Drinks, Countries, Smokes]:
-        for A in type:
-            for B in type:
-                if A != B:
-                    if B not in bindings[A]:
-                        bindings[A].append(B)
-                    if A not in bindings[B]:
-                        bindings[B].append(A)
+    for type in [nationality, color, drink, tobacco, animal]:#[color, animal, drink, nationality, tobacco]:
+        for fst_var in type:
+            for snd_var in type:
+                if fst_var != snd_var:
+                    if snd_var not in bindings[fst_var]:
+                        bindings[fst_var].append(snd_var)
+                    try:
+                        if fst_var not in bindings[snd_var]:
+                            bindings[snd_var].append(fst_var)
+                    except:
+                        bindings[snd_var] = []
+                        if fst_var not in bindings[snd_var]:
+                            bindings[snd_var].append(fst_var)
 
-    def zebra_constraint(A, a, B, b, recurse=0):
-        same = (a == b)
-        next_to = abs(a - b) == 1
-        if A == 'anglik' and B == 'czerwony':  # 2
-            return same
-        if A == 'bialy' and B == 'zielony':  # 3
-            return a - 1 == b
-        if A == 'dunczyk' and B == 'herbata':  # 4
-            return same
-        if A == 'light' and B == 'koty':  # 5
-            return next_to
-        if A == 'zolty' and B == 'cygara':  # 6
-            return same
-        if A == 'niemiec' and B == 'fajka':  # 7
-            return same
-        if A == 'light' and B == 'woda':  # 8
-            return next_to
-        if A == 'bfiltra' and B == 'ptaki':  # 10
-            return same
-        if A == 'szwed' and B == 'psy':  # 11
-            return same
-        if A == 'norweg' and B == 'niebieski':  # 12
-            return next_to
-        if A == 'zolty' and B == 'konie':  # 13
-            return next_to
-        if A == 'mentolowe' and B == 'piwo':  # 14
-            return same
-        if A == 'zielony' and B == 'kawa':  # 15
-            return same
-        if recurse == 0:
-            return zebra_constraint(B, b, A, a, 1)
-        if ((A in Colors and B in Colors) or
-                (A in Pets and B in Pets) or
-                (A in Drinks and B in Drinks) or
-                (A in Countries and B in Countries) or
-                (A in Smokes and B in Smokes)):
-            return not same
-        raise Exception('error')
 
-    def zebra_constraint2(A, a, B, b):
-        # same = (a == b)
-        # next_to = abs(a - b) == 1
-        variables = set([])
-        variables.add(A)
-        variables.add(B)
+    def ep_constraints(A, a, B, b):
+        vars_const = set([])
+        vars_const.add(A)
+        vars_const.add(B)
 
         def contains(val1, val2):
-            return variables.__contains__(val1) and variables.__contains__(val2)
+            return vars_const.__contains__(val1) and vars_const.__contains__(val2)
 
         if contains('anglik', 'czerwony'):  # 2. Anglik mieszka w czerwonym domu.
             return a == b
         if contains('bialy', 'zielony'):  # 3. Zielony dom znajduje się bezpośrednio po lewej stronie domu białego.
-            return a - 1 == b or a + 1 == b
+            return a + 1 == b #a - 1 == b  or
         if contains('dunczyk', 'herbata'):  # 4. Duńczyk pija herbatkę.
             return a == b
         if contains('light', 'koty'):  # 5. Palacz papierosów light mieszka obok hodowcy kotów.
@@ -468,17 +404,16 @@ def Zebra():
             return a == b
         if contains('zielony', 'kawa'):  # 15. W zielonym domu pija się kawę.
             return a == b
-        if ((A in Colors and B in Colors) or
-                (A in Pets and B in Pets) or
-                (A in Drinks and B in Drinks) or
-                (A in Countries and B in Countries) or
-                (A in Smokes and B in Smokes)):
+        if ((A in color and B in color) or
+                (A in animal and B in animal) or
+                (A in drink and B in drink) or
+                (A in nationality and B in nationality) or
+                (A in tobacco and B in tobacco)):
             return not (a == b)
-        #raise Exception('error')
 
-    return CSP(variables, domains, bindings, zebra_constraint2)
+    return CSP(variables, domains, bindings, ep_constraints)
 
-z = Zebra()
+z = einsteins_puzzle()
 print(z)
 z_bt = backtracking_search(z, fc=False)
 z_bt_s = sorted(z_bt.items(), key=lambda item: item[1])
