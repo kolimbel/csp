@@ -125,6 +125,7 @@ class CSP():
         self.nassigns = 0
 
 
+
     def nconflicts(self, var, val, assignment):
         """Return the number of conflicts var=val has with other variables."""
         # Subclasses may implement this more efficiently
