@@ -34,6 +34,15 @@ def recursive_backtracking(assignment, csp, fc, fst_domain, mrv):
                 result = recursive_backtracking(assignment, csp, fc, fst_domain, mrv)
                 if result is not None:
                     return result
+            # if fc:
+            #
+            #     excluded = [(var, a) for a in csp.available_domains[var] if a != val]
+            #     csp.available_domains[var] = [val]
+            #
+            #     forward_checking(csp, var, val, assignment, excluded)
+            #     result = recursive_backtracking(assignment, csp, fc, fst_domain, mrv)
+            #     if result is not None:
+            #         return result
             else:
                 result = recursive_backtracking(assignment, csp, fc, fst_domain, mrv)
                 if result is not None:
@@ -54,15 +63,15 @@ def forward_checking(csp, var, value, assignment, excluded):
     if csp.available_domains is None:
         csp.available_domains = {v: list(csp.domains[v]) for v in csp.variables}
 
-    for B in csp.bindings[var]:
-        if B not in assignment:
-            for b in csp.available_domains[B][:]:
-                if not csp.constraints(var, value, B, b):
+    for var_bind in csp.bindings[var]:
+        if var_bind not in assignment:
+            for val_bind in csp.available_domains[var_bind][:]:
+                if not csp.constraints(var, value, var_bind, val_bind):
                     # wykluczyć rozpatrywany
-                    csp.available_domains[B].remove(b)
+                    csp.available_domains[var_bind].remove(val_bind)
                     if excluded is not None:
-                        excluded.append((B, b))
-            if not csp.available_domains[B]:
+                        excluded.append((var_bind, val_bind))
+            if not csp.available_domains[var_bind]:
                 return False
     return True
 
