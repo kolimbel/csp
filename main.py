@@ -1,4 +1,7 @@
-# from einsteins_puzzle import *
+from einsteins_puzzle import *
+from random_graph import *
+from problem import *
+from map_coloring import *
 
 # ep = EinsteinsPuzzle()
 # for i in range(ep.matrix.shape[0]):
@@ -14,6 +17,15 @@
 # print('zakonczono metode fnd_solutions()')
 # eps.print_solutions()
 
-from random_graph import *
-random_graph = Graph(10, 10, 6)
-print(random_graph.strgraph)
+
+
+# random_graph = Graph(10, 10, 6)
+# print(random_graph.strgraph)
+
+mc = MapColoring(30, 30, 10)
+mc.map_backtracking(k=3)
+mc.show_map()
+
+ep = EinsteinsPuzzle()
+ep.show_graph()
+
