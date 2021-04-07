@@ -29,50 +29,19 @@
 
 
 from random_graph import *
+import networkx as nx
+import matplotlib.pyplot as plt
 
 
 class CSP():
-    """This class describes finite-domain Constraint Satisfaction Problems.
-        A CSP is specified by the following inputs:
-            variables   A list of variables; each is atomic (e.g. int or string).
-            domains     A dict of {var:[possible_value, ...]} entries.
-            neighbors   A dict of {var:[var,...]} that for each variable lists
-                        the other variables that participate in constraints.
-            constraints A function f(A, a, B, b) that returns true if neighbors
-                        A, B satisfy the constraint when they have values A=a, B=b
-        In the textbook and in most mathematical definitions, the
-        constraints are specified as explicit pairs of allowable values,
-        but the formulation here is easier to express and more compact for
-        most cases (for example, the n-Queens problem can be represented
-        in O(n) space using this notation, instead of O(n^4) for the
-        explicit representation). In terms of describing the CSP as a
-        problem, that's all there is.
-        However, the class also supports data structures and methods that help you
-        solve CSPs by calling a search function on the CSP. Methods and slots are
-        as follows, where the argument 'a' represents an assignment, which is a
-        dict of {var:val} entries:
-            assign(var, val, a)     Assign a[var] = val; do other bookkeeping
-            unassign(var, a)        Do del a[var], plus other bookkeeping
-            number_of_conflicts(var, val, a) Return the number of other variables that
-                                    conflict with var=val
-            available_domains[var]       Slot: remaining consistent values for var
-                                    Used by constraint propagation routines.
-        The following methods are used only by graph_search and tree_search:
-            actions(state)          Return a list of actions
-            result(state, action)   Return a successor of state
-            goal_test(state)        Return true if all constraints satisfied
-        The following are just for debugging purposes:
-            nassigns                Slot: tracks the number of assignments made
-            display(a)              Print a human-readable representation
-        """
-
     def __init__(self, variables, domains, bindings, constraints):
         self.variables = variables
         self.domains = domains
         self.bindings = bindings
         self.constraints = constraints
-        self.available_domains = None
         self.nassigns = 0
+        self.available_domains = None
+
 
 
     def number_of_conflicts(self, var, val, assignment):
@@ -219,7 +188,7 @@ def forward_checking(csp, var, value, assignment, excluded):
 # Map Coloring CSP Problems
 
 
-class UniversalDict:
+class MyDictionary:
     """A universal dict maps any key to the same value. We use it here
     as the domains dict for CSPs in which all variables have the same domain.
     >> d = UniversalDict(42)
@@ -232,12 +201,13 @@ class UniversalDict:
 
     def __getitem__(self, key): return self.value
 
-    def __repr__(self): return '{{Any: {0!r}}}'.format(self.value)
 
 
-def different_values_constraint(A, a, B, b):
-    """A constraint saying two neighboring variables must differ in value."""
-    return a != b
+def diff_values_const(fst_country, fst_color, snd_country, snd_color):
+    if fst_country == snd_country:
+        raise Exception('bledne porownanie')
+    else:
+        return fst_color != snd_color
 
 
 def MapColoringCSP(colors, borders):
@@ -245,38 +215,39 @@ def MapColoringCSP(colors, borders):
     for any two adjacent regions. Arguments are a list of colors, and a
     dict of {region: [neighbor,...]} entries. This dict may also be
     specified as a string of the form defined by parse_neighbors."""
-    if isinstance(borders, str):
-        borders = parse_borders(borders)
+    borders = bindings_to_dic(borders)
     lnk = list(borders.keys())
-    return CSP(list(borders.keys()), UniversalDict(colors), borders, different_values_constraint)
+    domains = MyDictionary(colors)
+    return CSP(lnk, domains, borders, diff_values_const)
 
 
-def parse_borders(neighbors):
+def bindings_to_dic(bindings):
     """Convert a string of the form 'X: Y Z; Y: Z' into a dict mapping
     regions to neighbors. The syntax is a region name followed by a ':'
     followed by zero or more region names, followed by ';', repeated for
     each region name. If you say 'X: Y' you don't need 'Y: X'.
-    >>> parse_borders('X: Y Z; Y: Z') == {'Y': ['X', 'Z'], 'X': ['Y', 'Z'], 'Z': ['X', 'Y']}
+    >>> bindings_to_dic('X: Y Z; Y: Z') == {'Y': ['X', 'Z'], 'X': ['Y', 'Z'], 'Z': ['X', 'Y']}
     True
     """
-    #dic = defaultdict(list)
-    dic = {}
-    specs = [spec.split(':') for spec in neighbors.split(';')]
-    for (A, Aneighbors) in specs:
-        A = A.strip()
-        for B in Aneighbors.split():
+    dictionary = {}
+    splitted = []
+    for sp in bindings.split(';'):
+        s = sp.split(':')
+        splitted.append(s)
+    for (BinMain, BinBindings) in splitted:
+        BinMain = BinMain.strip()
+        for Bin in BinBindings.split():
             try:
-                dic[A].append(B)
+                dictionary[BinMain].append(Bin)
             except:
-                dic[A] = []
-                dic[A].append(B)
-
+                dictionary[BinMain] = []
+                dictionary[BinMain].append(Bin)
             try:
-                dic[B].append(A)
+                dictionary[Bin].append(BinMain)
             except:
-                dic[B] = []
-                dic[B].append(A)
-    return dic
+                dictionary[Bin] = []
+                dictionary[Bin].append(BinMain)
+    return dictionary
 
 # MAP ZADANIE
 #
@@ -291,8 +262,7 @@ print(australia_bt)
 if australia_bt is None:
     raise Exception('nie znaleziono rozwiąznia') # TODO: zamiast tego ponowic dla nowego grafu i zapisac info o braku rozwiazania
 
-import networkx as nx
-import matplotlib.pyplot as plt
+
 
 G = nx.DiGraph(directed=True)
 nodes, positions = gr.get_nodes()
@@ -322,17 +292,10 @@ options = {
     'arrowsize': 10,
 }
 
-# Need to create a layout when doing
-# separate calls to draw nodes and edges
-#pos = nx.spring_layout(G)
-#pos = nx.get_node_attributes()
-#nx.set_node_attributes(G, pos, 'coord')
+
 pos = nx.get_node_attributes(G, 'pos')
 nx.draw_networkx_nodes(G, pos, node_color=color_map, arrows=True, **options, cmap=plt.get_cmap('jet'))
 nx.draw_networkx_labels(G, pos, font_size=8)
-# nx.draw_networkx_edges(G, pos, edgelist=red_edges, edge_color='r', arrows=True)
-# nx.draw_networkx_edges(G, pos, edgelist=green_edges, edge_color='g', arrows=True)
-# nx.draw_networkx_edges(G, pos, edgelist=blue_edges, edge_color='b', arrows=True)
 nx.draw_networkx_edges(G, pos, edgelist=black_edges, arrows=True)
 plt.show(block=False)
 # plt.close('all')
@@ -352,7 +315,7 @@ def einsteins_puzzle():
         domains[var] = list(range(1, 6))
     domains['norweg'] = [1]  # 1. Norweg zamieszkuje pierwszy dom
     domains['mleko'] = [3]  # 8. Mieszkaniec środkowego domu pija mleko.
-    bindings = parse_borders("""anglik: czerwony; zielony: bialy; light: koty; light: woda; norweg: niebieski; konie: zolty;
+    bindings = bindings_to_dic("""anglik: czerwony; zielony: bialy; light: koty; light: woda; norweg: niebieski; konie: zolty;
                 niemiec: fajka; bfiltra: ptaki; szwed: psy; zolty: cygara;
                 dunczyk: herbata; mentolowe: piwo; zielony: kawa""")
     for type in [nationality, color, drink, tobacco, animal]:#[color, animal, drink, nationality, tobacco]:
@@ -370,46 +333,57 @@ def einsteins_puzzle():
                             bindings[snd_var].append(fst_var)
 
 
-    def ep_constraints(A, a, B, b):
-        vars_const = set([])
-        vars_const.add(A)
-        vars_const.add(B)
+    def diff_categories_ep(fst_var, fst_house_number, snd_var, snd_house_number):
+        diff_categories = True
+        if ((fst_var in nationality and snd_var in nationality) or
+                (fst_var in color and snd_var in color) or
+                (fst_var in drink and snd_var in drink) or
+                (fst_var in tobacco and snd_var in tobacco) or
+                (fst_var in animal and snd_var in animal)):
+            diff_categories = False
+        #
+        #
+        if diff_categories is False:
+            return not (fst_house_number == snd_house_number)
+        else:
+            pass
 
-        def contains(val1, val2):
-            return vars_const.__contains__(val1) and vars_const.__contains__(val2)
+    def ep_constraints(fst_var, fst_house_number, snd_var, snd_house_number):
+        vars_const = set([])
+        vars_const.add(fst_var)
+        vars_const.add(snd_var)
+
+        def contains(var1, var2):
+            return vars_const.__contains__(var1) and vars_const.__contains__(var2)
 
         if contains('anglik', 'czerwony'):  # 2. Anglik mieszka w czerwonym domu.
-            return a == b
+            return fst_house_number == snd_house_number
         if contains('bialy', 'zielony'):  # 3. Zielony dom znajduje się bezpośrednio po lewej stronie domu białego.
-            return a + 1 == b #a - 1 == b  or
+            return fst_house_number + 1 == snd_house_number #a - 1 == b  or
         if contains('dunczyk', 'herbata'):  # 4. Duńczyk pija herbatkę.
-            return a == b
+            return fst_house_number == snd_house_number
         if contains('light', 'koty'):  # 5. Palacz papierosów light mieszka obok hodowcy kotów.
-            return abs(a - b) == 1
+            return abs(fst_house_number - snd_house_number) == 1
         if contains('zolty', 'cygara'):  # 6. Mieszkaniec żółtego domu pali cygara.
-            return a == b
+            return fst_house_number == snd_house_number
         if contains('niemiec', 'fajka'):  # 7. Niemiec pali fajkę.
-            return a == b
+            return fst_house_number == snd_house_number
         if contains('light', 'woda'):  # 9. Palacz papierosów light ma sąsiada, który pija wodę.
-            return abs(a - b) == 1
+            return abs(fst_house_number - snd_house_number) == 1
         if contains('bfiltra', 'ptaki'):  # 10. Palacz papierosów bez filtra hoduje ptaki.
-            return a == b
+            return fst_house_number == snd_house_number
         if contains('szwed', 'psy'):  # 11. Szwed hoduje psy.
-            return a == b
+            return fst_house_number == snd_house_number
         if contains('norweg', 'niebieski'):  # 12. Norweg mieszka obok niebieskiego domu.
-            return abs(a - b) == 1
+            return abs(fst_house_number - snd_house_number) == 1
         if contains('zolty', 'konie'):  # 13. Hodowca koni mieszka obok żółtego domu.
-            return abs(a - b) == 1
+            return abs(fst_house_number - snd_house_number) == 1
         if contains('mentolowe', 'piwo'):  # 14. Palacz mentolowych pija piwo.
-            return a == b
+            return fst_house_number == snd_house_number
         if contains('zielony', 'kawa'):  # 15. W zielonym domu pija się kawę.
-            return a == b
-        if ((A in color and B in color) or
-                (A in animal and B in animal) or
-                (A in drink and B in drink) or
-                (A in nationality and B in nationality) or
-                (A in tobacco and B in tobacco)):
-            return not (a == b)
+            return fst_house_number == snd_house_number
+
+        return diff_categories_ep(fst_var, fst_house_number, snd_var, snd_house_number)
 
     return CSP(variables, domains, bindings, ep_constraints)
 
@@ -418,6 +392,39 @@ print(z)
 z_bt = backtracking_search(z, fc=False)
 z_bt_s = sorted(z_bt.items(), key=lambda item: item[1])
 print(z_bt_s)
+nodes = {}
+for i in z_bt_s:
+    try:
+        nodes[i[1]] += ';\n' + str(i[0])
+    except:
+        nodes[i[1]] = str(i[0])
 print('rybki: ' + str(z_bt['rybki']))
+
+G2 = nx.DiGraph(directed=True)
+nodesg = list(nodes.items())
+positionsg = [(1,0), (2,0), (3,0), (4, 0), (5,0)]
+for i in range(len(nodesg)):
+    G2.add_node(nodesg[i][0], pos=positionsg[i], atr=str(nodesg[i][0]) + ':\n ' + nodesg[i][1])
+G2.add_edges_from([(1,2),(2,3),(3,4),(4,5)])
+
+
+black_edges2 = [edge for edge in G2.edges()]
+
+pos_map2 = []
+
+# arrows options
+options2 = {
+    'node_size': 5000,
+    'width': 3,
+    'arrowstyle': '-|>',
+    'arrowsize': 10,
+}
+
+
+pos2 = nx.get_node_attributes(G2, 'pos')
+atr2 = nx.get_node_attributes(G2, 'atr')
+nx.draw_networkx_nodes(G2, pos2, arrows=True, **options2, cmap=plt.get_cmap('jet'))
+nx.draw_networkx_labels(G2, pos2, labels=atr2, font_size=10)
+nx.draw_networkx_edges(G2, pos2, edgelist=black_edges2, arrows=True)
 
 plt.show(block=True)
