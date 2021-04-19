@@ -42,15 +42,20 @@ class Problem:
         self.constraints = constraints
         self.number_assigned = 0
         self.available_domains = None
+        self.visited = 0
 
     def number_of_conflicts(self, var, val, assignment):
         counter_conflicts = 0
 
         for v in self.bindings[var]:
             if v in assignment:
+                self.visited += 1
                 v_val = assignment[v]
                 if self.constraints(var, val, v, v_val) is False:
                     counter_conflicts += 1
+                    self.visited += 1
+                else:
+                    self.visited += 1
 
         return counter_conflicts
 

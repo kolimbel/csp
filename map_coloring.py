@@ -46,10 +46,10 @@ class MapColoring:
                     dictionary[node].append(Bin)
         return dictionary
 
-    def map_backtracking(self, k, fc=False, mrv=False):
+    def map_backtracking(self, k, fc=False, fst_domain=True, mrv=False):
         map_graph_csp = self.map_coloring(k)
-        self.map_graph_bt = backtracking_search(map_graph_csp, fc=fc, mrv=mrv)
-
+        self.map_graph_bt = backtracking_search(map_graph_csp, fc=fc, fst_domain=fst_domain, mrv=mrv)
+        print('Visited = {}'.format(map_graph_csp.visited))
         if self.map_graph_bt is None:
             raise Exception(
                 'nie znaleziono rozwiąznia')  # TODO: zamiast tego ponowic dla nowego grafu i zapisac info o braku rozwiazania
@@ -87,16 +87,23 @@ class MapColoring:
         plt.show(block=True)
 
         # plt.close('all')
-
-
 class StaticDictionary:
     def __init__(self, value):
         self.value = value
-
-    def __getitem__(self, key):
+    def __getitem__(self, k):
         return self.value
 
 
-mc = MapColoring(30, 30, 12)
-mc.map_backtracking(k=4, fc=True)
-mc.show_map()
+
+mc0 = MapColoring(100, 100, 10)
+mc1 = copy.deepcopy(mc0)
+print('without BT:')
+mc0.map_backtracking(k=4, fst_domain=True, mrv=False, fc=False)
+mc0.show_map()
+print('with FC:')
+mc1.map_backtracking(k=4, fst_domain=True, mrv=False, fc=True)
+mc1.show_map()
+
+# mc = MapColoring(20, 50, 15)
+# mc.map_backtracking(k=4, fc=True)
+# mc.show_map()

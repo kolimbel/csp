@@ -28,6 +28,7 @@ class Graph:
         # self.points.append(Point(8,1))
         # self.points.append(Point(6,2))
         # self.points.append(Point(8,4))
+
         temp_points = []
         for a in range(self.size_x):
             for b in range(self.size_y):
@@ -125,6 +126,7 @@ class Graph:
             for con in point.connections:
                 tuples.append((str(point.x) + '.' + str(point.y), (str(con.x) + '.' + str(con.y))))
         return tuples
+        #return [('6.6', '8.4'), ('6.6', '6.2'), ('8.1', '8.4'), ('8.1', '6.2'), ('6.2', '8.4'), ('6.2', '6.6'), ('6.2', '8.1'), ('8.4', '6.6'), ('8.4', '6.2'), ('8.4', '8.1')]
 
     def get_nodes(self):
         nodes = []
