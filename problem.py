@@ -48,14 +48,15 @@ class Problem:
         counter_conflicts = 0
 
         for v in self.bindings[var]:
+            #self.visited += 1 # ?
             if v in assignment:
                 self.visited += 1
                 v_val = assignment[v]
                 if self.constraints(var, val, v, v_val) is False:
                     counter_conflicts += 1
-                    self.visited += 1
-                else:
-                    self.visited += 1
+                    #self.visited += 1
+                #else:
+                    #self.visited += 1
 
         return counter_conflicts
 

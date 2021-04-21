@@ -1,4 +1,6 @@
 from problem import *
+from timeit import default_timer as timer
+from datetime import timedelta
 
 
 class MapColoring:
@@ -10,10 +12,10 @@ class MapColoring:
 
     def map_coloring(self, k):
         if k == 3:
-            print('3 kolory')
+            #print('3 kolory')
             colors = ['tomato', 'limegreen', 'lightskyblue']
         elif k == 4:
-            print('4 kolory')
+            #print('4 kolory')
             colors = ['tomato', 'limegreen', 'lightskyblue', 'yellow']
         else:
             raise Exception('parametr k moze przyjac wartosc tylko 3 albo 4')
@@ -48,8 +50,11 @@ class MapColoring:
 
     def map_backtracking(self, k, fc=False, fst_domain=True, mrv=False):
         map_graph_csp = self.map_coloring(k)
+        time_start = timer()
         self.map_graph_bt = backtracking_search(map_graph_csp, fc=fc, fst_domain=fst_domain, mrv=mrv)
-        print('Visited = {}'.format(map_graph_csp.visited))
+        time_end = timer()
+        elapsed_time = timedelta(seconds=time_end-time_start)
+        print('Visited = {}'.format(map_graph_csp.visited) + ' ; Time = {}'.format(elapsed_time))
         if self.map_graph_bt is None:
             raise Exception(
                 'nie znaleziono rozwiąznia')  # TODO: zamiast tego ponowic dla nowego grafu i zapisac info o braku rozwiazania
@@ -99,10 +104,10 @@ mc0 = MapColoring(100, 100, 10)
 mc1 = copy.deepcopy(mc0)
 print('without BT:')
 mc0.map_backtracking(k=4, fst_domain=True, mrv=False, fc=False)
-mc0.show_map()
+#mc0.show_map()
 print('with FC:')
 mc1.map_backtracking(k=4, fst_domain=True, mrv=False, fc=True)
-mc1.show_map()
+#mc1.show_map()
 
 # mc = MapColoring(20, 50, 15)
 # mc.map_backtracking(k=4, fc=True)

@@ -52,8 +52,7 @@ class Graph:
 
         points_to_connection = list(range(len(self.points)))
 
-        while len(
-                points_to_connection) > 1:  # check_todo_connection(): # and counter_cannot_connect < self.number_of_points * 1000 * np.sqrt(self.size_x**2 * self.size_y**2):
+        while len(points_to_connection) > 0:  # check_todo_connection(): # and counter_cannot_connect < self.number_of_points * 1000 * np.sqrt(self.size_x**2 * self.size_y**2):
             # while counter_cannot_connect < (self.size_x * self.size_y):
             random_point_idx = random.sample(points_to_connection, 1)[0]
             random_point = self.points[random_point_idx]
@@ -69,9 +68,9 @@ class Graph:
             nearest_point = nearest_points[0][0]
 
             for npoint in nearest_points:
-                if npoint[0] in random_point.connections:
-                    pass
-                else:
+                if npoint[0] not in random_point.connections:
+                #    pass
+                #else:
                     cross = False
                     for p in self.points:
                         for con in p.connections:

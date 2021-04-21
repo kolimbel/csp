@@ -50,6 +50,7 @@ def recursive_backtracking(assignment, csp, fc, fst_domain, mrv):
                     return result
 
         # unassign
+        csp.visited += len(assignment)
         if var in assignment:
             del assignment[var]
 
@@ -69,24 +70,24 @@ def forward_checking(csp, var, value, assignment, excluded):
         if var_bind not in assignment:
             for val_bind in csp.available_domains[var_bind][:]:
                 if not csp.constraints(var, value, var_bind, val_bind):
-                    #csp.visited += 1
+                    # csp.visited += 2
                     # wykluczyć rozpatrywany
                     csp.available_domains[var_bind].remove(val_bind)
                     if excluded is not None:
                         excluded.append((var_bind, val_bind))
-                #else:
-                    #csp.visited += 1
+                # else:
+                #     csp.visited += 2
 
 
 # kolejnosc zmiennej
 def select_unassigned_variable(assignment, csp):
     for var in csp.variables:
-        #csp.visited += 1
+        csp.visited += 1
         if var in assignment:
-            #csp.visited += 1
+            csp.visited += 1
             pass
         else:
-            #csp.visited += 1
+            csp.visited += 1
             return var
 
 
